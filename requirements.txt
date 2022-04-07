@@ -1,5 +1,2 @@
-fastapi
-websockets
-uvicorn
 aiohttp
 faker

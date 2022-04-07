@@ -6,7 +6,6 @@ __all__ = (
 )
 
 import asyncio
-import random
 import typing
 import faker
 import faker.providers.internet as internet

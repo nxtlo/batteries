@@ -14,7 +14,7 @@ class GatewayTransport:
 
     __slots__ = ("_host", "_port", "_client_session", "_logger")
 
-    def __init__(self, host: str = "localhost", port: str = "8000") -> None:
+    def __init__(self, host: str = "127.0.0.1", port: str = "8000") -> None:
         self._host = host
         self._port = port
         self._client_session: aiohttp.ClientSession | None = None
@@ -22,7 +22,8 @@ class GatewayTransport:
 
     def _get_session(self) -> aiohttp.ClientSession:
         if self._client_session is None:
-            self._client_session = aiohttp.ClientSession()
+            connector = aiohttp.TCPConnector(verify_ssl=False)
+            self._client_session = aiohttp.ClientSession(trust_env=True, connector=connector)
 
         return self._client_session
 
@@ -36,7 +37,7 @@ class GatewayTransport:
         try:
             ws = await stack.enter_async_context(
                 session.ws_connect(
-                    f"http://{self._host}:{self._port}/ws/",
+                    f"http://{self._host}:{self._port}/",
                     autoclose=False,
                     autoping=False,
                     max_msg_size=0,

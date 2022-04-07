@@ -87,12 +87,7 @@ class HuaweiVM:
 
         run_task = asyncio.create_task(self._run_once())
         self._run_task = run_task
-        done, _ = await asyncio.wait((run_task,), return_when=asyncio.FIRST_COMPLETED)
-
-        if not done:
-            self._run_task = None
-            run_task.result()
-            raise asyncio.CancelledError("Cancelled by user")
+        await asyncio.wait((run_task,), return_when=asyncio.FIRST_COMPLETED)
 
     async def close(self) -> None:
         """Close the connection to the gateway for this device."""
@@ -107,10 +102,10 @@ class HuaweiVM:
 
         self._transport = await stack.enter_async_context(gateway.connect())
 
-        opened = await self._send_signal(enums.Signal.OPEN)
+        await self._send_signal(enums.Signal.OPEN)
 
-        if opened:
-            await self._send_hello()
+        # if opened:
+            # await self._send_hello()
 
     async def _send_hello(self) -> None:
         await self._send_json(
