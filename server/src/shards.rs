@@ -91,8 +91,6 @@ impl Shard {
     }
 
     pub async fn dispatch<'a>(&'a mut self, mut stream: WebSocketStream<TcpStream>) -> Safe {
-        let slf = self.clone();
-
         while let Some(msg) = stream.next().await {
             if let Ok(msg) = msg {
 
@@ -104,7 +102,7 @@ impl Shard {
                     }
                 };
 
-                let payload = slf.marshaller.deserialize_payload(&value);
+                let payload = self.marshaller.deserialize_payload(&value);
                 println!("{}", payload);
             }
         }
