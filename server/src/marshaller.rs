@@ -88,7 +88,7 @@ impl Payload {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Marshaller;
 
 impl fmt::Display for Marshaller {

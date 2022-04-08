@@ -59,18 +59,18 @@ impl std::fmt::Display for Shard {
 }
 
 impl Shard {
-    pub fn new(ip: Option<String>, port: Option<String>) -> Self {
-        let addr = ip.unwrap_or("127.0.0.1".to_string()).to_string().to_owned();
+    pub fn new(ip: Option<&'static str>, port: Option<&'static str>) -> Self {
+        let addr = ip.unwrap_or("127.0.0.1");
         let marsh = Marshaller::new();
 
         Self {
             marshaller: marsh,
-            ip: addr,
-            port: port.unwrap_or("8000".to_string()).to_string().to_owned(),
+            ip: addr.to_string(),
+            port: port.unwrap_or("8000").to_string(),
         }
     }
 
-    pub async fn start(&mut self) -> SafeAs<()> {
+    pub async fn start<'a>(&'a self) -> SafeAs<()> {
         let addr = format!("{}:{}", self.ip, self.port);
         let binder = TcpListener::bind(&addr)
             .await
@@ -80,17 +80,14 @@ impl Shard {
 
         while let Ok((stream_, _)) = binder.accept().await {
             let stream = accept_async(stream_).await.unwrap();
-
-            tokio::spawn(async move {
-                let mut shard = Shard::new(None, None);
-                shard.dispatch(stream).await.unwrap();
-            });
+            self.dispatch(stream).await.unwrap();
         }
 
         Ok(())
     }
 
-    pub async fn dispatch<'a>(&'a mut self, mut stream: WebSocketStream<TcpStream>) -> Safe {
+
+    pub async fn dispatch(&self, mut stream: WebSocketStream<TcpStream>) -> Safe {
         while let Some(msg) = stream.next().await {
             if let Ok(msg) = msg {
 
@@ -109,4 +106,5 @@ impl Shard {
 
         Ok(())
     }
+
 }

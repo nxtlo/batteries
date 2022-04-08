@@ -8,8 +8,7 @@ use crate::shards::Shard;
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let _ = env_logger::try_init();
 
-    let mut shard = Shard::new(None, None);
-
+    let shard = Shard::new(None, None);
     shard.start().await.unwrap();
 
     Ok(())
