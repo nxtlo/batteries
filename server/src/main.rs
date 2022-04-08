@@ -1,5 +1,6 @@
 mod shards;
 mod utils;
+mod marshaller;
 
 use crate::shards::Shard;
 
@@ -7,7 +8,8 @@ use crate::shards::Shard;
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let _ = env_logger::try_init();
 
-    let mut shard = Shard::new(None, None).await;
+    let mut shard = Shard::new(None, None);
+
     shard.start().await.unwrap();
 
     Ok(())

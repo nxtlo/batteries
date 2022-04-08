@@ -1,5 +1,10 @@
 import enum
 
+__all__ = (
+    "Signal",
+)
+
+
 class Signal(int, enum.Enum):
     BEGIN = -1
     CLOSE = 0

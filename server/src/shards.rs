@@ -1,8 +1,10 @@
-use crate::utils::SafeAs;
+use crate::utils::{SafeAs, Safe};
 use futures::prelude::*;
-use tokio::net::TcpListener;
-use tokio_tungstenite::accept_async;
+use tokio::net::{TcpListener, TcpStream};
+use tokio_tungstenite::{accept_async, WebSocketStream};
 use tracing::info;
+
+use crate::marshaller::Marshaller;
 
 #[derive(Clone, Debug)]
 pub enum Signal {
@@ -43,17 +45,26 @@ impl From<String> for Signal {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Shard {
+    marshaller: Marshaller,
     ip: String,
     port: String,
 }
 
+impl std::fmt::Display for Shard {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "Shard(ip: {}, port: {})", self.ip, self.port)
+    }
+}
+
 impl Shard {
-    pub async fn new(ip: Option<String>, port: Option<String>) -> Self {
+    pub fn new(ip: Option<String>, port: Option<String>) -> Self {
         let addr = ip.unwrap_or("127.0.0.1".to_string()).to_string().to_owned();
+        let marsh = Marshaller::new();
 
         Self {
+            marshaller: marsh,
             ip: addr,
             port: port.unwrap_or("8000".to_string()).to_string().to_owned(),
         }
@@ -67,22 +78,37 @@ impl Shard {
 
         info!("Listening on {}", addr);
 
-        while let Ok((stream, addr)) = binder.accept().await {
-            info!("Connection from {}", addr);
-
-            let mut ws = accept_async(stream).await?;
+        while let Ok((stream_, _)) = binder.accept().await {
+            let stream = accept_async(stream_).await.unwrap();
 
             tokio::spawn(async move {
-                while let Some(msg) = ws.next().await {
-                    let msg = msg.unwrap().to_owned();
-                    let signal = Signal::from(msg.to_string());
-
-                    println!("{:?}", signal.to_string());
-                }
+                let mut shard = Shard::new(None, None);
+                shard.dispatch(stream).await.unwrap();
             });
         }
 
         Ok(())
     }
 
+    pub async fn dispatch<'a>(&'a mut self, mut stream: WebSocketStream<TcpStream>) -> Safe {
+        let slf = self.clone();
+
+        while let Some(msg) = stream.next().await {
+            if let Ok(msg) = msg {
+
+                let value: serde_json::Value = match serde_json::from_str(&msg.to_string().as_str()) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        println!("Failed to parse message: {}", e);
+                        continue;
+                    }
+                };
+
+                let payload = slf.marshaller.deserialize_payload(&value);
+                println!("{}", payload);
+            }
+        }
+
+        Ok(())
+    }
 }

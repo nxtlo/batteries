@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+__all__ = (
+    "GatewayTransport",
+)
+
 import asyncio
 import collections.abc as collections
 import contextlib
