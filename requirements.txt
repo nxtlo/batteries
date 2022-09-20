@@ -1,0 +1,3 @@
+aiohttp
+faker
+zmq
