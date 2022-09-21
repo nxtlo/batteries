@@ -1,27 +1,20 @@
 from __future__ import annotations
 
-__all__ = (
-    "Gateway",
-)
+__all__ = ("Gateway",)
 
 import logging
-import typing
 
-from . import devices, enums
 import zmq
 import zmq.asyncio
+
+from . import devices, enums
 
 logging.basicConfig(level=logging.DEBUG)
 _LOGGER = logging.getLogger("connector")
 
+
 class Gateway:
-    __slots__ = (
-        "_context",
-        "_connection",
-        "_devices",
-        "_address",
-        "_count"
-    )
+    __slots__ = ("_context", "_connection", "_devices", "_address", "_count")
 
     def __init__(self, address: str | None = None) -> None:
         self._context = zmq.asyncio.Context()
@@ -35,7 +28,7 @@ class Gateway:
         if self._connection is not None:
             raise RuntimeError("Sockset is already running.")
 
-        self._connection = conn = self._context.socket(zmq.REP)
+        self._connection = conn = self._context.socket(zmq.PULL)
         conn.bind(self._address or "tcp://*:5555")
         _LOGGER.info("Connected to gateway...")
 
@@ -51,7 +44,7 @@ class Gateway:
 
         raise RuntimeError("Socket closed...")
 
-    async def listen(self, signal_event: enums.Signal, callback: typing.Callable[..., typing.Any]) -> None:
+    async def listen(self) -> None:
         socket = self._get_connection()
 
         while True:
@@ -59,10 +52,24 @@ class Gateway:
             dev = devices.deserialize_device(buffer)
 
             _LOGGER.debug(
-                'Device IP: %s Name: %s Event: %s',
-                dev.ip_address, dev.host_name, dev.signal.name
+                "Device IP: %s Name: %s Event: %s",
+                dev.ip_address,
+                dev.host_name,
+                str(dev.signal),
             )
-            callback()
+
+            match dev.signal:
+                case enums.Signal.OPEN if dev not in self._devices:
+                    self._devices[dev.host_name] = dev
+                case enums.Signal.CLOSE:
+                    del self._devices[dev.host_name]
+                case enums.Signal.RESTART:
+                    # Access device hardware or API to restart?
+                    _LOGGER.info("Restarting device %s", dev.host_name)
+                case enums.Signal.HELLO:
+                    _LOGGER.info("Device %s sent signal HELLO", dev.host_name)
+                case _:
+                    return
 
     def __enter__(self) -> Gateway:
         self.open()

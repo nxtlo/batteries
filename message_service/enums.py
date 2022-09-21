@@ -1,8 +1,6 @@
 import enum
 
-__all__ = (
-    "Signal",
-)
+__all__ = ("Signal",)
 
 
 class Signal(int, enum.Enum):

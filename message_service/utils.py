@@ -8,10 +8,12 @@ __all__ = (
 
 import asyncio
 import typing
+
 import faker
 import faker.providers.internet as internet
 
 T_co = typing.TypeVar("T_co", covariant=True)
+
 
 def get_or_make_loop() -> asyncio.AbstractEventLoop:
     """Get the current usable event loop or create a new one.
@@ -34,6 +36,7 @@ def get_or_make_loop() -> asyncio.AbstractEventLoop:
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     return loop
+
 
 async def all_of(
     *aws: typing.Awaitable[T_co],
@@ -66,13 +69,15 @@ async def all_of(
         except asyncio.CancelledError:
             pass
 
+
 _fake = faker.Faker()
 _fake.add_provider(internet)
+
 
 def generate_random_ipv4_address() -> str:
     """Generate a random IPv4 address."""
     return _fake.ipv4_private()
-    
+
 
 def generate_random_mac_address() -> str:
     """Generate a random MAC address."""
