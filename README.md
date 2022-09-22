@@ -8,9 +8,9 @@ A robust communication service between devices and websocket server using ZeroMQ
 from message_service import gateway, devices, enums
 
 # server.py
-server = gatewau.Gateway()
+server = gateway.Gateway()
 
-asyncio.run(await server.open())
+await server.open()
 
 # clients.py
 
